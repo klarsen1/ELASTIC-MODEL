@@ -197,7 +197,7 @@ playoffs <-
   ungroup()
 
 ### Helper function to get the probability from the elastic net model and simulate the 7 game series
-matchup <- function(team1, team2){
+matchup <- function(team1, team2, played){
   team1_stats <- filter(playoffs, team_abbreviation==team1)  %>%
     summarise(across(starts_with("min"), ~ mean(abs(.x), na.rm = TRUE))) %>%
     mutate(total_min=rowSums(across(starts_with("min")))) %>%
@@ -235,7 +235,13 @@ matchup <- function(team1, team2){
     nn1 <- 0
     nn2 <- 0
     for (g in 1:7){
-      binomial <- as.numeric(rbinom(n=1, size=1, prob=p[g]))  
+      if (played[g]==1){
+        binomial <- 1
+      } else if (played[g]==-1){
+        binomial <- 0
+      } else{
+        binomial <- as.numeric(rbinom(n=1, size=1, prob=p[g]))  
+      }
       if (binomial==1){nn1 <- nn1+1}
       else {nn2 <- nn2+1}
     }
@@ -251,8 +257,8 @@ matchup <- function(team1, team2){
 
 ### Run the games for round 2
 
-matchup("MEM", "GS")
+matchup("MEM", "GS", c(-1,0,-0,-0,0,0,0))
 matchup("PHX", "DAL")
 
 matchup("MIA", "PHI")
-matchup("BOS", "MIL") 
+matchup("BOS", "MIL", c(-1,0,0,0,0,0,0)) 
