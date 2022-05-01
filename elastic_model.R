@@ -119,7 +119,9 @@ dist <- group_by(clusters, cluster) %>%
 ################### Set up data for modeling by calculating the net differences in cluster distributions
 box_df_clusters <- left_join(box_df, dplyr::select(clusters, -athlete_display_name), by=c("athlete_id", "season")) %>%
   replace_na(list(cluster=0)) %>%
-  ## Hack: remove injured players to accurately capture downstream cluster distributions (will not be used for modeling)
+  ## Hack: remove injured players to accurately capture downstream cluster distributions 
+  ## This data will not be used for modeling so it's OK
+  ## Need to change this to create the injury adjusted percentages from the player data
   filter(!(current_playoffs==1 & athlete_display_name=="Joel Embiid")) %>% 
   group_by(current_playoffs, season, season_type, game_id, game_date, team_abbreviation, team_id, team_pts, cluster) %>%
   summarise(min=sum(min)) %>%
