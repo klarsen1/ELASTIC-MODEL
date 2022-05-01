@@ -7,8 +7,6 @@ library(glmnet)
 library(ggplot2)
 library(hoopR)
 
-setwd("/Users/kim.larsen/Documents/Code/ELASTIC-MODEL")
-
 ################### Settings
 min_minutes <-8 
 min_games <- 20
