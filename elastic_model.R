@@ -124,10 +124,6 @@ set.seed(2022)
 ################### Set up data for modeling by calculating the net differences in cluster distributions
 box_df_clusters <- left_join(box_df, dplyr::select(clusters, -athlete_display_name), by=c("athlete_id", "season")) %>%
   replace_na(list(cluster=0)) %>%
-  ## Hack: remove injured players to accurately capture downstream cluster distributions 
-  ## This data will not be used for modeling so it's OK
-  ## Need to change this to create the injury adjusted percentages from the player data
-  filter(!(current_playoffs==1 & athlete_display_name=="Joel Embiid")) %>% 
   group_by(current_playoffs, season, season_type, game_id, game_date, team_abbreviation, team_id, team_pts, cluster, home) %>%
   summarise(min=sum(min)) %>%
   arrange(game_id, team_pts) %>%
@@ -185,6 +181,7 @@ playoffs <-
   replace_na(list(cluster=0)) %>%
   filter(athlete_display_name != "Joel Embiid") %>% # injured
   filter(athlete_display_name != "Khris Middleton") %>% # injured
+  filter(athlete_display_name != "Gary Payton II") %>% # injured
   group_by(game_id, game_date, team_abbreviation, team_id, cluster, current_playoffs) %>%
   summarise(min=sum(min)) %>%
   ungroup() %>%
@@ -257,8 +254,10 @@ matchup <- function(team1, team2, played){
 
 ### Run the games for round 2
 
-matchup("MEM", "GS", c(-1,0,-0,-0,0,0,0))
-matchup("PHX", "DAL")
+matchup("MEM", "GS", c(-1,1,0,0,0,0,0))
+matchup("PHX", "DAL", c(1,0,0,0,0,0,0))
 
-matchup("MIA", "PHI")
-matchup("BOS", "MIL", c(-1,0,0,0,0,0,0)) 
+matchup("MIA", "PHI", c(1,0,0,0,0,0,0))
+matchup("BOS", "MIL", c(-1,1,0,0,0,0,0)) 
+
+matchup("GS", "PHX", c(0,0,0,0,0,0,0))
