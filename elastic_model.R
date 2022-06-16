@@ -181,7 +181,6 @@ playoffs <-
   replace_na(list(cluster=0)) %>%
   filter(athlete_display_name != "Joel Embiid") %>% # injured
   filter(athlete_display_name != "Khris Middleton") %>% # injured
-  filter(athlete_display_name != "Gary Payton II") %>% # injured
   group_by(game_id, game_date, team_abbreviation, team_id, cluster, current_playoffs) %>%
   summarise(min=sum(min)) %>%
   ungroup() %>%
@@ -221,9 +220,9 @@ matchup <- function(team1, team2, played){
   
   Y <- 0
   X1 <- model.matrix(as.formula(Y ~ .), dplyr::select(input1, starts_with("min"), home_team))
-  p1 <- as.numeric(1/(1+exp(-X1%*%c[-1])))
+  p1 <- as.numeric(1/(1+exp(-X1[,row.names(c)[-1]]%*%c[-1])))
   X2 <- model.matrix(as.formula(Y ~ .), dplyr::select(input2, starts_with("min"), home_team))
-  p2 <- as.numeric(1/(1+exp(-X2%*%c[-1])))
+  p2 <- as.numeric(1/(1+exp(-X2[,row.names(c)[-1]]%*%c[-1])))
   p <- c(p1, p1, p2, p2, p1, p2, p1)
   
   n1 <- 0
@@ -252,12 +251,36 @@ matchup <- function(team1, team2, played){
   return(prob_win)
 }
 
+contribution <- function(team1, team2){
+  team1_stats <- filter(playoffs, team_abbreviation==team1)  %>%
+    summarise(across(starts_with("min"), ~ mean(abs(.x), na.rm = TRUE))) %>%
+    mutate(total_min=rowSums(across(starts_with("min")))) %>%
+    mutate_at(vars(starts_with("min")), ~(. / total_min)) %>%
+    mutate(total_min=rowSums(across(starts_with("min"))))
+  
+  team2_stats <- filter(playoffs, team_abbreviation==team2)  %>%
+    summarise(across(starts_with("min"), ~ mean(abs(.x), na.rm = TRUE))) %>%
+    mutate(total_min=rowSums(across(starts_with("min")))) %>%
+    mutate_at(vars(starts_with("min")), ~(. / -total_min)) %>%
+    mutate(total_min=rowSums(across(starts_with("min"))))
+  
+  inputx <- bind_rows(team1_stats, team2_stats) %>%
+    summarise_at(vars(starts_with("min")), sum) %>%
+    mutate(home_team=0) %>%
+    ungroup()
+
+  Y <- 0
+  XX <- model.matrix(as.formula(Y ~ .), dplyr::select(inputx, starts_with("min"), home_team))
+  print(XX[,row.names(c)[-1]])
+  d <- data.frame(row.names(c)[-1], XX[,row.names(c)[-1]]*c[-1])
+  names(d) <- c("variable", "contribution") 
+  return(d)
+
+}
+
+View(contribution("GS","BOS"))
+
 ### Run the games for round 2
 
-matchup("MEM", "GS", c(-1,1,0,0,0,0,0))
-matchup("PHX", "DAL", c(1,0,0,0,0,0,0))
+matchup("GS","BOS", c(-1,1,-1,1,1,0,0))
 
-matchup("MIA", "PHI", c(1,0,0,0,0,0,0))
-matchup("BOS", "MIL", c(-1,1,0,0,0,0,0)) 
-
-matchup("GS", "PHX", c(0,0,0,0,0,0,0))
